@@ -56,7 +56,6 @@ func createServer() error {
 	mux.HandleFunc("GET /cart/total", cartController.CalculateTotal)
 	mux.HandleFunc("POST /cart/availability", cartController.CheckAvailability)
 
-	// Iniciar o servidor
 	log.Println("Servidor rodando em http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 
