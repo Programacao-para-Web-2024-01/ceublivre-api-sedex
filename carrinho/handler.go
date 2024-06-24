@@ -2,8 +2,12 @@ package carrinho
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 )
 
 type CartController struct {
@@ -22,6 +26,8 @@ func (ctrl *CartController) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("Recebida requisição POST para adicionar item:", item)
+
 	newItem, err := ctrl.svc.AddItem(item)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -38,7 +44,7 @@ func (ctrl *CartController) AddItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ctrl *CartController) RemoveItem(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Query().Get("id")
+	idStr := mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -76,7 +82,7 @@ func (ctrl *CartController) UpdateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ctrl *CartController) CalculateTotal(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Query().Get("id")
+	idStr := mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -152,4 +158,25 @@ func (ctrl *CartController) GetActiveCart(w http.ResponseWriter, r *http.Request
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func RegisterCartRoutes(router *mux.Router, svc *CartService) {
+	ctrl := NewCartController(svc)
+
+	cors := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)
+
+	cartRouter := router.PathPrefix("/cart").Subrouter()
+	cartRouter.Use(cors)
+
+	cartRouter.HandleFunc("/items", ctrl.AddItem).Methods("POST")
+	cartRouter.HandleFunc("/items/{id}", ctrl.RemoveItem).Methods("DELETE")
+	cartRouter.HandleFunc("/items/{id}", ctrl.UpdateItem).Methods("PUT")
+	cartRouter.HandleFunc("/total/{id}", ctrl.CalculateTotal).Methods("GET")
+	cartRouter.HandleFunc("/availability", ctrl.CheckAvailability).Methods("POST")
+	cartRouter.HandleFunc("", ctrl.CreateCart).Methods("POST")
+	cartRouter.HandleFunc("/active", ctrl.GetActiveCart).Methods("GET")
 }

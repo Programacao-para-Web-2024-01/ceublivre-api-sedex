@@ -15,7 +15,7 @@ func NewCartRepository(database *sql.DB) *CartRepository {
 }
 
 func (repo *CartRepository) List() ([]Cart, error) {
-	rows, err := repo.db.Query(`SELECT id, created_at FROM carts`)
+	rows, err := repo.db.Query(`SELECT cart_id, created_at FROM ShoppingCart`)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (repo *CartRepository) List() ([]Cart, error) {
 }
 
 func (repo *CartRepository) Get(id int64) (*Cart, error) {
-	row := repo.db.QueryRow(`SELECT id, created_at FROM carts WHERE id = ?`, id)
+	row := repo.db.QueryRow(`SELECT cart_id, created_at FROM ShoppingCart WHERE cart_id = ?`, id)
 
 	var c Cart
 	err := row.Scan(&c.ID, &c.CreatedAt)
@@ -63,7 +63,7 @@ func (repo *CartRepository) Get(id int64) (*Cart, error) {
 }
 
 func (repo *CartRepository) Create(c Cart) (int64, error) {
-	result, err := repo.db.Exec(`INSERT INTO carts(created_at) VALUES (?)`, c.CreatedAt)
+	result, err := repo.db.Exec(`INSERT INTO ShoppingCart(created_at) VALUES (?)`, c.CreatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -77,17 +77,17 @@ func (repo *CartRepository) Create(c Cart) (int64, error) {
 }
 
 func (repo *CartRepository) Update(id int64, c Cart) error {
-	_, err := repo.db.Exec(`UPDATE carts SET created_at = ? WHERE id = ?`, c.CreatedAt, id)
+	_, err := repo.db.Exec(`UPDATE ShoppingCart SET created_at = ? WHERE cart_id = ?`, c.CreatedAt, id)
 	return err
 }
 
 func (repo *CartRepository) Delete(id int64) error {
-	_, err := repo.db.Exec(`DELETE FROM carts WHERE id = ?`, id)
+	_, err := repo.db.Exec(`DELETE FROM ShoppingCart WHERE cart_id = ?`, id)
 	return err
 }
 
 func (repo *CartRepository) ListItems(cartID int64) ([]CartItem, error) {
-	rows, err := repo.db.Query(`SELECT id, cart_id, product_id, quantity FROM cart_items WHERE cart_id = ?`, cartID)
+	rows, err := repo.db.Query(`SELECT cart_item_id, cart_id, product_id, quantity FROM CartItem WHERE cart_id = ?`, cartID)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (repo *CartRepository) ListItems(cartID int64) ([]CartItem, error) {
 }
 
 func (repo *CartRepository) AddItem(item CartItem) (int64, error) {
-	result, err := repo.db.Exec(`INSERT INTO cart_items(cart_id, product_id, quantity) VALUES (?, ?, ?)`, item.CartID, item.ProductID, item.Quantity)
+	result, err := repo.db.Exec(`INSERT INTO CartItem(cart_id, product_id, quantity) VALUES (?, ?, ?)`, item.CartID, item.ProductID, item.Quantity)
 	if err != nil {
 		return 0, err
 	}
@@ -121,11 +121,11 @@ func (repo *CartRepository) AddItem(item CartItem) (int64, error) {
 }
 
 func (repo *CartRepository) UpdateItem(item CartItem) error {
-	_, err := repo.db.Exec(`UPDATE cart_items SET quantity = ? WHERE id = ?`, item.Quantity, item.ID)
+	_, err := repo.db.Exec(`UPDATE CartItem SET quantity = ? WHERE cart_item_id = ?`, item.Quantity, item.ID)
 	return err
 }
 
 func (repo *CartRepository) RemoveItem(id int64) error {
-	_, err := repo.db.Exec(`DELETE FROM cart_items WHERE id = ?`, id)
+	_, err := repo.db.Exec(`DELETE FROM CartItem WHERE cart_item_id = ?`, id)
 	return err
 }
